@@ -1,0 +1,29 @@
+# Configuration file for jitify.
+
+# Some debugging info about the build:
+message(STATUS "jitify was built with JITIFY_LINK_STATIC=@JITIFY_LINK_STATIC@")
+message(STATUS "jitify was built with JITIFY_THREAD_SAFE=@JITIFY_THREAD_SAFE@")
+message(STATUS "jitify was built with JITIFY_ENABLE_EXCEPTIONS=@JITIFY_ENABLE_EXCEPTIONS@")
+message(STATUS "jitify was built with JITIFY_FAIL_IMMEDIATELY=@JITIFY_FAIL_IMMEDIATELY@")
+message(STATUS "jitify was built with JITIFY_USE_LIBCUFILT=@JITIFY_USE_LIBCUFILT@")
+message(STATUS "jitify was built with CUDAToolkit_VERSION=@CUDAToolkit_VERSION@")
+
+# Make sure the dependencies are available:
+# FIXME If static linking, we don't need CUDA at this point.
+# FIXME If shared linking, we can tolerate minor version changes?
+include(CMakeFindDependencyMacro)
+find_dependency(CUDAToolkit @CUDAToolkit_VERSION@ REQUIRED)
+if (NOT MSVC)
+    find_dependency(Threads REQUIRED)
+endif ()
+
+# Create targets:
+if(NOT TARGET cuda_rtc::jitify2)
+    # This contains all the targets, with linking requirements, included directories and compile definitions.
+    include("${CMAKE_CURRENT_LIST_DIR}/cuda_rtcTargets.cmake")
+    set(cuda_rtc_FOUND TRUE)
+
+    if (cuda_rtc_FIND_COMPONENTS AND NOT cuda_rtc_FIND_QUIETLY)
+        message(STATUS "Some components where required, but cuda_rtc doesn't support components, so this is ignored")
+    endif ()
+endif()
