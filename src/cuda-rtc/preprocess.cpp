@@ -16,9 +16,11 @@ void write_binary_as_c_array(
         const std::string& varname,
         std::istream& istream,
         std::ostream& ostream,
-        bool make_static
+        bool make_static,
+        bool is_header
 ) {
-    ostream << "#pragma once\n";
+    if (is_header)
+        ostream << "#pragma once\n\n";
     if (make_static)
         ostream << "static ";
     ostream << "const unsigned char " << varname << "[] = {\n";
@@ -147,6 +149,9 @@ int main(int argc, char* argv[]) {
             std::cerr << "Error reading source file " << source_filename << std::endl;
             return EXIT_FAILURE;
         }
+        if (options.verbose) {
+            std::cout << "Preprocessing file:" << source_filename << std::endl;
+        }
 
         // Preprocess.
         PreprocessedProgram preprocessed = Program(
@@ -179,7 +184,7 @@ int main(int argc, char* argv[]) {
         if (!make_directories_for(output_filename))
             return EXIT_FAILURE;
         std::ofstream file(output_filename, std::ios::binary);
-        write_binary_as_c_array(source_varname, ss, file, /*make_static=*/ true);
+        write_binary_as_c_array(source_varname, ss, file, /*make_static=*/ true, /*is_header=*/ true);
         if (!file) {
             std::cerr << "Error writing output to " << output_filename << std::endl;
             return EXIT_FAILURE;
@@ -191,9 +196,10 @@ int main(int argc, char* argv[]) {
         std::stringstream ss(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
         serialization::serialize(ss, all_header_sources);
         std::string output_filename = path_join(options.output_dir, options.shared_headers_filename + ".jit.cpp");
-        if (!make_directories_for(output_filename)) return EXIT_FAILURE;
+        if (!make_directories_for(output_filename))
+            return EXIT_FAILURE;
         std::ofstream file(output_filename, std::ios::binary);
-        write_binary_as_c_array(shared_headers_varname, ss, file, /*make_static=*/ true);
+        write_binary_as_c_array(shared_headers_varname, ss, file, /*make_static=*/ true, /*is_header=*/ false);
         if (!file) {
             std::cerr << "Error writing output to " << output_filename << std::endl;
             return EXIT_FAILURE;
