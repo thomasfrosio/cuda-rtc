@@ -3835,8 +3835,6 @@ namespace detail {
 static const std::unordered_set<std::string>& get_workaround_system_headers() {
   static const std::unordered_set<std::string>& workaround_system_header_names =
       {
-          "assert.h", "limits.h", "math.h", "stdint.h", "stdio.h",
-          "stdlib.h", "string.h", "time.h", "memory.h",
       };
   return workaround_system_header_names;
 }
@@ -4383,30 +4381,30 @@ inline PreprocessedProgram PreprocessedProgram::preprocess(
     std::string name, std::string source, StringMap header_sources,
     StringVec compiler_options, StringVec linker_options,
     FileCallback header_callback) {
-  // Add pre-include built-in JIT-safe headers.
-  bool use_system_headers_war =
-      !detail::pop_flag(&compiler_options, "-no-system-headers-workaround",
-                        "--no-system-headers-workaround");
-#if CUDA_VERSION >= 11000
-  // This issue with /usr/include always being searched is fixed in this NVRTC.
-  use_system_headers_war = false;
-#endif
-  if (use_system_headers_war) {
-    // Workaround for /usr/include always being searched by NVRTC.
-    for (const std::string& header_name :
-         detail::get_workaround_system_headers()) {
-      const std::string& header_source =
-          detail::get_jitsafe_headers_map().at(header_name);
-      header_sources.emplace(header_name, header_source);
-    }
-  }
-  if (!detail::pop_flag(&compiler_options, "-no-preinclude-workarounds",
-                        "--no-preinclude-workarounds")) {
-    header_sources.emplace(
-        "jitify_preinclude.h",
-        detail::get_jitsafe_headers_map().at("jitify_preinclude.h"));
-    compiler_options.push_back("-include=jitify_preinclude.h");
-  }
+//  // Add pre-include built-in JIT-safe headers.
+//  bool use_system_headers_war =
+//      !detail::pop_flag(&compiler_options, "-no-system-headers-workaround",
+//                        "--no-system-headers-workaround");
+//#if CUDA_VERSION >= 11000
+//  // This issue with /usr/include always being searched is fixed in this NVRTC.
+//  use_system_headers_war = false;
+//#endif
+//  if (use_system_headers_war) {
+//    // Workaround for /usr/include always being searched by NVRTC.
+//    for (const std::string& header_name :
+//         detail::get_workaround_system_headers()) {
+//      const std::string& header_source =
+//          detail::get_jitsafe_headers_map().at(header_name);
+//      header_sources.emplace(header_name, header_source);
+//    }
+//  }
+//  if (!detail::pop_flag(&compiler_options, "-no-preinclude-workarounds",
+//                        "--no-preinclude-workarounds")) {
+//    header_sources.emplace(
+//        "jitify_preinclude.h",
+//        detail::get_jitsafe_headers_map().at("jitify_preinclude.h"));
+//    compiler_options.push_back("-include=jitify_preinclude.h");
+//  }
   detail::add_std_flag_if_not_specified(&compiler_options, "c++11");
   detail::add_default_device_flag_if_not_specified(&compiler_options);
   bool minify = detail::pop_flag(&compiler_options, "-m", "--minify");
@@ -4434,7 +4432,10 @@ inline PreprocessedProgram PreprocessedProgram::preprocess(
     std::string& header_source = name_source.second;
     bool is_jitify_preinclude = header_name == "jitify_preinclude.h";
     bool is_cuda_std_header =
-        detail::get_workaround_system_headers().count(header_name);
+        detail::get_workaround_system_headers().count(header_name) ||
+        header_name.find(detail::kJitifyBuiltinHeaderPrefix) == 0 ||
+        // TODO: More robust way to detect this?
+        header_name.find("cuda/std/") != std::string::npos;
     header_source = detail::patch_cuda_source(
         header_source,
         use_cuda_std && !is_jitify_preinclude && !is_cuda_std_header,
