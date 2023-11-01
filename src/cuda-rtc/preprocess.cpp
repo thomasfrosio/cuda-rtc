@@ -22,6 +22,10 @@ void write_binary_as_c_array(
     if (!namespace_name.empty())
         ostream << "namespace " << namespace_name << " {\n\n";
 
+    // Declare.
+    ostream << "extern const unsigned char " << varname << "[];\n";
+    ostream << "extern const unsigned long long " << varname << "_size;\n\n";
+
     // Save the array.
     ostream << "const unsigned char " << varname << "[] = {\n";
     constexpr const char* hex_digits = "0123456789abcdef";
@@ -35,7 +39,10 @@ void write_binary_as_c_array(
         if (++n % 16 == 0)
             ostream << "\n";
     }
-    ostream << "\n};\n";
+    ostream << "\n};\n\n";
+
+    ostream << "const unsigned long long " << varname << "_size =\n";
+    ostream << "    static_cast<unsigned long long>(sizeof(" << varname << "));\n";
 
     if (!namespace_name.empty())
         ostream << "\n}\n";
