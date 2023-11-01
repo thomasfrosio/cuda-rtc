@@ -25,7 +25,9 @@ option(JITIFY_USE_LIBCUFILT "Use Jitify's builtin demangler by default" OFF)
 add_library(cuda_rtc_jifity2 INTERFACE src/cuda-rtc/jitify2.hpp)
 add_library(cuda_rtc::jitify2 ALIAS cuda_rtc_jifity2)
 
-# Link everything at link-time and don't rely on jitify's runtime loading for now.
+target_include_directories(cuda_rtc_jifity2 INTERFACE "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>")
+
+# Link everything at link-time and don't rely on jitify's runtime loading, for now.
 find_package(CUDAToolkit 11 REQUIRED)
 target_link_libraries(cuda_rtc_jifity2 INTERFACE
     CUDA::cuda_driver
